@@ -1,6 +1,6 @@
 from fastapi import Depends
 
-from sqlalchemy import select
+from sqlalchemy import select, delete, update, insert
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,17 +10,19 @@ from src.shop.models.category import Category
 
 from src.database import async_session_maker, get_async_session
 
-from src.shop.schemas import (Create_category_model, Create_product_model)
+from src.shop.schemas import (Create_category_model, Create_product_model, Edit_category_model)
 
 class ProductRepository:
-    @staticmethod
-    async def create_product(name:str,
-                                designer:str,
-                                size:str,
-                                color:str,
-                                price:float, 
-                                session:AsyncSession,
-                                ) -> Product:
+    @classmethod
+    async def create_product(
+                            cls,
+                            name:str,
+                            designer:str,
+                            size:str,
+                            color:str,
+                            price:float, 
+                            session:AsyncSession,
+                            ) -> Product:
         product = Product(
             name=name,
             designer=designer,
@@ -36,20 +38,21 @@ class ProductRepository:
     
 
 class CategoryRepository:
-    @staticmethod
+    @classmethod
     async def create_category(
+        cls,
         category:Create_category_model, 
     ) -> Category:
         async with async_session_maker() as session:
-            data = category.model_dump()
-            new_category = Category(**data)
+            stmt = category.model_dump()
+            new_category = Category(**stmt)
             session.add(new_category)
             await session.commit()
 
             return new_category
     
-    @staticmethod
-    async def get_all_categories() -> list[Category]:
+    @classmethod
+    async def get_all_categories(cls) -> list[Category]:
         async with async_session_maker() as session:
             query = (
                 select(Category)
@@ -59,13 +62,33 @@ class CategoryRepository:
 
             return list(categories)
         
-    @staticmethod
-    async def get_category() -> Category:
+    @classmethod
+    async def get_category(cls, category_id:int) -> Category:
         async with async_session_maker() as session:
             query = (
                 select(Category)
-                .where()
+            ).where(Category.id == category_id)
+
+            category = await session.scalar(query)
+
+            return category
+        
+    @classmethod
+    async def edit_category(cls, category_id:int, category_model:Edit_category_model):
+        async with async_session_maker() as session:
+            stmt = (
+                update(Category).
+                where(Category.id == category_id).
+                values(**category_model.model_dump(exclude_none=True))
             )
+
+            await session.execute(stmt)
+            await session.commit()
+            
+            return {"status": "success"}
+
+
+
 
 
 async def demo_m2m(session:AsyncSession):

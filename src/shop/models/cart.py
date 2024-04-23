@@ -1,12 +1,13 @@
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text, ForeignKey, Table, Column, Integer, UniqueConstraint
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
 
+from src.auth.models import User
+
 if TYPE_CHECKING:
-    from src.auth.models import User
     from src.shop.models.product import Product
 
 class Cart(Base):

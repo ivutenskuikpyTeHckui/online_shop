@@ -10,6 +10,7 @@ from src.shop.models.product_category_association import ProductCategoryAssociat
 if TYPE_CHECKING:
     from src.shop.models.category import Category
     from src.shop.models.wishlist import WishList
+    from src.shop.models.cart import Cart
 
 
 
@@ -29,4 +30,4 @@ class Product(Base):
 
     wishlist: Mapped[List["WishList"]] = relationship(back_populates="product")
 
-    cart: Mapped[List["WishList"]] = relationship(back_populates="product")
+    cart: Mapped[List["Cart"]] = relationship(back_populates="product")

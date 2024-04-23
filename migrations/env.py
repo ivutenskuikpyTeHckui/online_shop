@@ -10,14 +10,14 @@ from src.config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
 
 from src.database import Base
 
-from src.shop.models.product import Product
-from src.shop.models.category import Category
-from src.shop.models.product_category_association import ProductCategoryAssociation
-from src.shop.models.wishlist import WishList
-from src.shop.models.cart import Cart
-
-
+# from src.shop.models.wishlist import WishList
+# from src.shop.models.product import Product
+# from src.shop.models.category import Category
+# from src.shop.models.product_category_association import ProductCategoryAssociation
+# from src.shop.models.cart import Cart
 from src.auth.models import User
+from src.shop.models import *
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

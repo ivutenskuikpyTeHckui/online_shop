@@ -10,6 +10,7 @@ from src.database import Base
 
 if TYPE_CHECKING:
     from src.shop.models.wishlist import WishList
+    from src.shop.models.cart import Cart
 
 class User(Base):
     __tablename__ = "user"
@@ -25,5 +26,5 @@ class User(Base):
     
     wishlist: Mapped[List["WishList"]] = relationship(back_populates="user")
 
-    cart: Mapped[List["WishList"]] = relationship(back_populates="user")
+    cart: Mapped[List["Cart"]] = relationship(back_populates="user")
 
