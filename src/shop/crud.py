@@ -1,46 +1,111 @@
-from fastapi import Depends
-
-from sqlalchemy import select, delete, update, insert
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import select, delete, update
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.shop.models.product import Product
 from src.shop.models.category import Category
 
 
-from src.database import async_session_maker, get_async_session
+from src.database import async_session_maker
 
-from src.shop.schemas import (Create_category_model, Create_product_model, Edit_category_model)
+from src.shop.schemas import (
+    Create_category_model, 
+    Create_product_model, 
+    Edit_category_model, 
+    Category_for_product,
+    Edit_product_model,
+)
 
 class ProductRepository:
-    @classmethod
+
+    @staticmethod
     async def create_product(
-                            cls,
-                            name:str,
-                            designer:str,
-                            size:str,
-                            color:str,
-                            price:float, 
-                            session:AsyncSession,
+                            new_product_model:Create_product_model,
+                            list_of_category:Category_for_product,
                             ) -> Product:
-        product = Product(
-            name=name,
-            designer=designer,
-            size=size,
-            color=color,
-            price=price,
-        )
+        async with async_session_maker() as session:
+            product = Product(**new_product_model.model_dump())
 
-        session.add(product)
-        await session.commit()
+            session.add(product)
+            
+            for n in range(len(list_of_category.list_of_id)):
+                category = await session.scalar(
+                    select(Category).
+                    where(Category.id == list_of_category.list_of_id[n]).
+                    options(selectinload(Category.products),),
+                )
 
-        return product
+                category.products.append(product)
+
+            await session.commit()
+
+            return product
     
+    @staticmethod
+    async def get_all_products() -> list[Product]:
+        async with async_session_maker() as session:
+            query = (
+                select(Product).
+                options(
+                    selectinload(Product.categories),
+                )
+            )
+
+            products = await session.scalars(query)
+
+            return list(products)
+        
+    @staticmethod
+    async def get_product(product_id:int) -> Product:
+        async with async_session_maker() as session:
+            query = (
+                select(Product).
+                where(Product.id == product_id).
+                options(
+                    selectinload(Product.categories),
+                )
+            )
+
+            product = await session.scalar(query)
+
+            return product
+        
+    @staticmethod
+    async def edit_product(product_id:int, product_model:Edit_product_model):
+        async with async_session_maker() as session:
+                
+            stmt = (
+                update(Product).
+                where(Product.id == product_id).
+                values(
+                    product_model.model_dump(exclude_none=True)
+                )
+            )
+
+            await session.execute(stmt)
+            await session.commit()
+
+            return {"status": "success"}
+        
+    @staticmethod
+    async def delete_product(product_id:int):
+        async with async_session_maker() as session:
+
+            stmt = (
+                delete(Product).
+                where(Product.id == product_id)
+            )
+
+            await session.execute(stmt)
+            await session.commit()
+            
+            return {"status": "success"}
+
 
 class CategoryRepository:
-    @classmethod
+
+    @staticmethod
     async def create_category(
-        cls,
         category:Create_category_model, 
     ) -> Category:
         async with async_session_maker() as session:
@@ -51,30 +116,49 @@ class CategoryRepository:
 
             return new_category
     
-    @classmethod
-    async def get_all_categories(cls) -> list[Category]:
+    @staticmethod
+    async def get_all_categories() -> list[Category]:
         async with async_session_maker() as session:
             query = (
-                select(Category)
-            ).order_by(Category.id)
+                select(Category).
+                order_by(Category.id)
+            )
 
             categories = await session.scalars(query)
 
             return list(categories)
         
-    @classmethod
-    async def get_category(cls, category_id:int) -> Category:
+    @staticmethod
+    async def get_category(category_id:int) -> Category:
         async with async_session_maker() as session:
             query = (
-                select(Category)
-            ).where(Category.id == category_id)
+                select(Category).
+                where(Category.id == category_id).
+                options(selectinload(Category.products))
+            )
 
             category = await session.scalar(query)
 
             return category
         
-    @classmethod
-    async def edit_category(cls, category_id:int, category_model:Edit_category_model):
+    @staticmethod
+    async def get_category_with_products(category_id:int) -> Category:
+        async with async_session_maker() as session:
+
+            query = (
+                select(Category).
+                where(Category.id == category_id).
+                options(selectinload(Category.products))
+            ) 
+            
+            category = await session.scalar(query)
+
+            await session.commit()
+
+            return category
+
+    @staticmethod
+    async def edit_category(category_id:int, category_model:Edit_category_model):
         async with async_session_maker() as session:
             stmt = (
                 update(Category).
@@ -86,51 +170,22 @@ class CategoryRepository:
             await session.commit()
             
             return {"status": "success"}
+        
+    @staticmethod
+    async def delete_category(category_id:int):
+        async with async_session_maker() as session:
+            stmt = (
+                delete(Category).
+                where(Category.id == category_id)
+            )
+            await session.execute(stmt)
+            await session.commit()
+
+            return {"status": "success"}
 
 
+class WishListRepository:
 
-
-
-async def demo_m2m(session:AsyncSession):
-    # return "hello"
-    pants = await ProductRepository.create_product(
-        name="штаны",
-        designer="балантьяга",
-        size="м",
-        color="черный",
-        price=4,
-        session=session,
-    )
-    shoes = await ProductRepository.create_product(
-        name="туфли",
-        designer="балантьяга",
-        size="42",
-        color="черный",
-        price=7,
-        session=session,
-    )
-  
-    category = await CategoryRepository.create_category("качество", "супер", session)
-
-    category = await session.scalar(
-        select(Category)
-        .where(Category.id == category.id)
-        .options(selectinload(Category.products),)
-    )
-
-    category.products.append(pants)
-    category.products.append(shoes)
-
-    await session.commit()
-
-async def m2m():
-    async with async_session_maker() as session:
-        await demo_m2m(session)
-    return "success"
-
-
-
-# nw_ctgr = Create_category_model(name="fff", description="ffff")
-# async def main():
-#     async with async_session_maker as session:
-#         await CategoryRepository.create_category(nw_ctgr, session)
+    @staticmethod
+    async def add_product():
+        pass
