@@ -3,7 +3,8 @@ from fastapi_users import FastAPIUsers
 
 
 from src.shop.router import router as router_shop
-
+from src.cart.router import router as router_cart
+from src.wishlist.router import router as router_wishlist
 
 from src.auth.models import User
 from src.auth.base_config import auth_backend
@@ -33,4 +34,6 @@ app.include_router(
 )
 
 app.include_router(router_shop)
+app.include_router(router_cart)
+app.include_router(router_wishlist)
 
