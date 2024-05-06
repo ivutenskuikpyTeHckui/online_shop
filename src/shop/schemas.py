@@ -22,6 +22,8 @@ class Category_for_product(BaseModel):
 
     list_of_id: list[int]
 
+#CATEGORY ++++++++++++++++++++++++++++++++++
+
 class Create_category_model(BaseModel):
     
     name: str
@@ -33,4 +35,10 @@ class Edit_category_model(BaseModel):
     description: Optional[str] = None
 
 
-    
+# CART +++++++++++++++++++++++++++++++++
+
+class Create_cart_product(BaseModel):
+
+    quantity: int
+    user_id: int
+    product_id: int
