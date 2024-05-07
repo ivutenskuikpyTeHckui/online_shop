@@ -52,8 +52,8 @@ class CartRepository:
         async with async_session_maker() as session:
             stmt = (
                 update(Cart).
-                where(user_id==user_id).
-                where(product_id==product_id).
+                filter(user_id==user_id, 
+                      product_id==product_id).
                 values(**update_model.model_dump(exclude_none=True))
             )
 

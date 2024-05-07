@@ -22,10 +22,29 @@ class WishListRepository:
             return wishlist
 
     @staticmethod
-    async def get_wishlist():
-        pass
+    async def get_wishlist(user_id:int) -> list[WishList]:
+        async with async_session_maker() as session:
+            query = (
+                select(WishList).
+                filter(WishList.user_id==user_id).
+                options(joinedload(WishList.product)).
+                order_by(WishList.id)
+            )
+
+            wishlist = await session.scalars(query)
+            return list(wishlist)
 
 
     @staticmethod
-    async def delete_product_from_wishlist():
-        pass
+    async def delete_product_from_wishlist(product_id:int, user_id:int):
+        async with async_session_maker() as session:
+            stmt = (
+                delete(WishList).
+                filter(WishList.product_id == product_id,
+                       WishList.user_id == user_id)
+            )
+
+            await session.execute(stmt)
+            await session.commit()
+
+            return {"status": "success"}

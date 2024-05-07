@@ -17,11 +17,13 @@ async def add_product_to_wishlist(wishlist_model:Create_Wishlist_model):
     return new_product_to_wishlist
 
 @router.get("/get_wishlist")
-async def get_wishlist(user_id:Annotated[int, Body()]):
-    pass
+async def get_wishlist(user_id:Annotated[int, Query()]):
+    wishlist = await WishListRepository.get_wishlist(user_id)
+    return wishlist
 
 @router.delete("/delete_product_from_wishlist")
 async def delete_product_from_wishlist(user_id:Annotated[int, Body()],
                                        product_id:Annotated[int, Body()]
                                        ):
-    pass
+    del_product = await WishListRepository.delete_product_from_wishlist(product_id, user_id)
+    return del_product
